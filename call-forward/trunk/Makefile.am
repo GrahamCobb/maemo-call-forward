@@ -1,7 +1,7 @@
 bin_PROGRAMS = call-forward
 call_forward_SOURCES = call-forward.c
 
-AM_CPPFLAGS += -DDBUS_API_SUBJECT_TO_CHANGE
+AM_CPPFLAGS = -DDBUS_API_SUBJECT_TO_CHANGE
 
 desktopdir = $(datadir)/applications/hildon
 desktop_in_files = call-forward.desktop.in
