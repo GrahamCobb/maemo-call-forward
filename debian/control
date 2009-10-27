@@ -1,0 +1,13 @@
+Source: call-forward
+Section: misc
+Priority: extra
+Maintainer: Graham Cobb <g+770@cobb.uk.net>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.8.3
+
+Package: call-forward
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Manage call forwarding
+ This application gives full control over the GSM voice call
+ forwarding settings
