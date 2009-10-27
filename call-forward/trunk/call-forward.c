@@ -118,8 +118,6 @@ int main (int argc, char *argv[])
 
   hildon_gtk_init(&argc, &argv);
 
-  dbus_g_thread_init();
-
   dbus_error_init(&dbus_error);
 
   dbus_system = dbus_bus_get(DBUS_BUS_SYSTEM, &dbus_error);
