@@ -18,17 +18,40 @@
  * 
  */
 
+#include <config.h>
+#include <glib.h>
+#define DBUS_API_SUBJECT_TO_CHANGE 1
+#include <dbus/dbus-glib-lowlevel.h>
+#include <dbus/dbus.h>
 #include <hildon/hildon.h>
+#include <libosso.h>
+
+#define PACKAGE_DBUS_NAME "net.uk.cobb.call-forward"
+
+osso_context_t* osso_ctx;
+
 
 int main (int argc, char *argv[])
 {
+
   hildon_gtk_init(&argc, &argv);
+
+  osso_ctx = osso_initialize(PACKAGE_DBUS_NAME, PACKAGE_VERSION, TRUE,
+                        NULL);
+  if (osso_ctx == NULL) {
+    g_print("Failed to init LibOSSO\n");
+    return 1;
+  }
 
   HildonProgram *program = hildon_program_get_instance ();
   HildonStackableWindow *main_window = HILDON_STACKABLE_WINDOW (hildon_stackable_window_new());
   hildon_program_add_window (program, HILDON_WINDOW (main_window));
   g_signal_connect (G_OBJECT (main_window), "delete_event",
                     G_CALLBACK (gtk_main_quit), NULL);
+
+  GtkBox *main_box = GTK_BOX (gtk_vbox_new (FALSE, 0));
+  gtk_container_add (GTK_CONTAINER (main_window), GTK_WIDGET (main_box));
+
   
   gtk_widget_show_all(GTK_WIDGET(main_window));
   gtk_main();
