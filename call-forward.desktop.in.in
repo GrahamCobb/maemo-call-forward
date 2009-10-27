@@ -1,0 +1,14 @@
+[Desktop Entry]
+Encoding=UTF-8
+_Name=Call Forward
+_Comment=Call Forwarding Manager
+Exec=@prefix@/bin/call-forward
+Terminal=false
+Type=Application
+Icon=call-forward
+X-Window-Icon=call-forward
+X-Window-Icon-Dimmed=call-forward
+X-Osso-Service=call-forward
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Type=application/x-executable
+StartupWMClass=call-forward
