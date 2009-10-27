@@ -1,9 +1,7 @@
 bin_PROGRAMS = call-forward
 call_forward_SOURCES = call-forward.c
 
-INCLUDES = $(DEPS_CFLAGS) $(HILDON_CFLAGS) \
-           -DPREFIX=\"@prefix@\" -D_GNU_SOURCE -Wall \
-           -DDBUS_API_SUBJECT_TO_CHANGE
+AM_CPPFLAGS += -DDBUS_API_SUBJECT_TO_CHANGE
 
 desktopdir = $(datadir)/applications/hildon
 desktop_in_files = call-forward.desktop.in
