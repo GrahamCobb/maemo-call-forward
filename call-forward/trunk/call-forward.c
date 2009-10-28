@@ -30,7 +30,7 @@
 
 DBusConnection *dbus_system, *dbus_session;
 osso_context_t* osso_ctx;
-dbus_int32_t dbus_pending_slot_cb = -1;
+dbus_int32_t ss_dbus_pending_slot_cb = -1;
 
 /* Diversion types */
 enum ss_diverts {
@@ -50,18 +50,18 @@ enum ss_barrings {
   SS_BARR_ALL_IN_ROAM /* Barring All Incoming when Roaming */
 };
 
-typedef void (*divert_check_reply)(void *param, gboolean divert_set, gchar *divert_number, DBusError *dbus_error);
+typedef void (*ss_divert_check_reply)(void *param, gboolean divert_set, gchar *divert_number, DBusError *dbus_error);
 
-void get_divert_reply(DBusPendingCall *pending, void *user_data) {
+void ss_get_divert_reply(DBusPendingCall *pending, void *user_data) {
   DBusMessage *reply;
   DBusError dbus_error;
   dbus_bool_t divert_set = FALSE;
   gchar *divert_number = NULL;
-  divert_check_reply callback;
+  ss_divert_check_reply callback;
 
   dbus_error_init(&dbus_error);
 
-  callback = (divert_check_reply) dbus_pending_call_get_data(pending, dbus_pending_slot_cb);
+  callback = (ss_divert_check_reply) dbus_pending_call_get_data(pending, ss_dbus_pending_slot_cb);
 
   reply = dbus_pending_call_steal_reply(pending);
 
@@ -70,6 +70,21 @@ void get_divert_reply(DBusPendingCall *pending, void *user_data) {
   if (!reply) {
     g_error("%s: Error stealing DivertCheck reply",__func__);
     dbus_set_error(&dbus_error, PACKAGE_DBUS_NAME ".Error.StealReply", "Error stealing DivertCheck reply");
+    goto exit;
+  }
+
+  /* Check for an error response */
+  if (dbus_message_get_type(reply) != DBUS_MESSAGE_TYPE_METHOD_RETURN) {
+    char *p_error = "Unknown response";
+
+    /* Let's try to check the first argument to see if it is a string.
+       If so, it might be useful to include in the error */
+    dbus_message_get_args(reply, NULL,
+			  DBUS_TYPE_STRING, &p_error,
+			  DBUS_TYPE_INVALID);
+
+    dbus_set_error(&dbus_error, PACKAGE_DBUS_NAME ".Error.ErrorReply", "DivertCheck: %s", p_error);
+    g_debug("%s: %s - %s", __func__, dbus_error.name, dbus_error.message);
     goto exit;
   }
 
@@ -103,7 +118,7 @@ void get_divert_reply(DBusPendingCall *pending, void *user_data) {
   return;
 }
 
-gboolean get_divert(enum ss_diverts divert_type, divert_check_reply reply_callback, void* user_data)
+gboolean ss_get_divert(enum ss_diverts divert_type, ss_divert_check_reply reply_callback, void* user_data)
 {
   DBusPendingCall *pending_return;
   dbus_uint32_t d_divert_type = divert_type;
@@ -136,13 +151,13 @@ gboolean get_divert(enum ss_diverts divert_type, divert_check_reply reply_callba
 
   dbus_message_unref(msg);
 
-  if (!dbus_pending_call_set_data(pending_return, dbus_pending_slot_cb, (void *)reply_callback, NULL)) {
+  if (!dbus_pending_call_set_data(pending_return, ss_dbus_pending_slot_cb, (void *)reply_callback, NULL)) {
     g_error("%s: Error setting reply notify",__func__);
     dbus_pending_call_unref(pending_return);
     return FALSE;
   }
 
-  if (!dbus_pending_call_set_notify(pending_return, get_divert_reply, user_data, NULL)) {
+  if (!dbus_pending_call_set_notify(pending_return, ss_get_divert_reply, user_data, NULL)) {
     g_error("%s: Error setting reply notify",__func__);
     dbus_pending_call_unref(pending_return);
     return FALSE;
@@ -164,8 +179,6 @@ void got_divert(void *param, gboolean divert_set, gchar *divert_number, DBusErro
   }
 
   g_free(divert_number);
-
-  //get_divert(SS_DIVERT_BUSY, got_divert, "Divert on busy");
 
   return;
 }
@@ -200,7 +213,7 @@ int main (int argc, char *argv[])
     return 1;
   }
 
-  if (!dbus_pending_call_allocate_data_slot(&dbus_pending_slot_cb)) {
+  if (!dbus_pending_call_allocate_data_slot(&ss_dbus_pending_slot_cb)) {
     g_error("Error allocating dbus pending call slot for callback");
     return 1;
   }
@@ -212,10 +225,16 @@ int main (int argc, char *argv[])
   g_signal_connect (G_OBJECT (main_window), "delete_event",
                     G_CALLBACK (gtk_main_quit), NULL);
 
-  GtkBox *main_box = GTK_BOX (gtk_vbox_new (FALSE, 0));
-  gtk_container_add (GTK_CONTAINER (main_window), GTK_WIDGET (main_box));
+  GtkWidget *pannable_area = hildon_pannable_area_new ();
+  gtk_container_add (GTK_CONTAINER (main_window), pannable_area);
 
-  get_divert(SS_DIVERT_ALL, got_divert, "Unconditional divert");
+
+  GtkBox *main_box = GTK_BOX (gtk_vbox_new (FALSE, 0));
+  hildon_pannable_area_add_with_viewport (
+					  HILDON_PANNABLE_AREA (pannable_area), GTK_WIDGET (main_box));
+
+  ss_get_divert(SS_DIVERT_ALL, got_divert, "Unconditional divert");
+  //  ss_get_divert(SS_DIVERT_BUSY, got_divert, "Divert on busy");
 
   gtk_widget_show_all(GTK_WIDGET(main_window));
   gtk_main();
