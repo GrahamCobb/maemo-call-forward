@@ -14,6 +14,9 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE")
 AC_SUBST(GETTEXT_PACKAGE)
 ALL_LINGUAS="id pt de fr zh_TW ro wa sv nl cs es sk sr ru hu zh_CN"
 
+call_forward_localedir='${prefix}/${DATADIRNAME}/locale'
+AC_SUBST(call_forward_localedir)
+
 AM_GLIB_GNU_GETTEXT
 AC_PROG_INTLTOOL([0.23])
 
