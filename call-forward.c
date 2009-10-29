@@ -24,7 +24,11 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus.h>
 #include <hildon/hildon.h>
+#include <hildon/hildon-entry.h>
 #include <libosso.h>
+#include <libintl.h>
+#define _(String) gettext (String)
+#include <locale.h>
 
 #define PACKAGE_DBUS_NAME "net.uk.cobb.call-forward"
 
@@ -166,26 +170,89 @@ gboolean ss_get_divert(enum ss_diverts divert_type, ss_divert_check_reply reply_
   return TRUE;
 }
 
+struct divert_entry {
+  GtkWindow *window;
+  GtkBox *hbox;
+  GtkWidget *button;
+  GtkWidget *entry;
+  char *label;
+  char *number;
+  enum ss_diverts divert_type;
+  gboolean set;
+};
+
+struct divert_entry *diverts = NULL;
+int num_diverts = 0;
+
 void got_divert(void *param, gboolean divert_set, gchar *divert_number, DBusError *dbus_error) {
+  int i = (int) param;
+
   if (dbus_error_is_set(dbus_error)) {
-    g_error("%s: Error getting existing divert information: %s - %s", __func__, dbus_error->name, dbus_error->message);
-    return;
-  }
-
-  if (divert_set) {
-    g_print("%s = %s\n", (char *)param, divert_number);
+    GtkWidget *note;
+    gchar *error;
+    error = g_strdup_printf(_("Error getting existing divert information: %s - %s"), dbus_error->name, dbus_error->message);
+    g_debug("%s: %s", __func__, error);
+    note = hildon_note_new_information (diverts[i].window, error);
+    gtk_dialog_run (GTK_DIALOG (note));
+    gtk_object_destroy (GTK_OBJECT (note));
+    g_free(error);
   } else {
-    g_print("%s is not set (%p)\n", (char *)param, divert_number);
+    gtk_widget_set_sensitive(GTK_WIDGET(diverts[i].hbox), TRUE);
+
+
+    hildon_check_button_set_active(HILDON_CHECK_BUTTON(diverts[i].button), divert_set);
+
+    if (divert_set) {
+      gtk_entry_set_text(GTK_ENTRY(diverts[i].entry), divert_number);
+    } else {
+      g_print("divert %s is not set\n", diverts[i].label);
+    }
+
+    g_free(diverts[i].number);
+    diverts[i].number = divert_number;
+    diverts[i].set = divert_set;
   }
 
-  g_free(divert_number);
+  if (++i < num_diverts) ss_get_divert(diverts[i].divert_type, got_divert, (void *)i);
 
   return;
+}
+
+int add_divert_row(GtkWindow *window, GtkContainer *box, char *label, enum ss_diverts divert_type) {
+  int i = num_diverts;
+
+  diverts = g_renew(struct divert_entry, diverts, ++num_diverts);
+
+  diverts[i].window = window;
+
+  diverts[i].hbox = GTK_BOX (gtk_hbox_new (FALSE, 0));
+  gtk_container_add (box, GTK_WIDGET(diverts[i].hbox));
+  gtk_widget_set_sensitive(GTK_WIDGET(diverts[i].hbox), FALSE);
+
+  diverts[i].button = hildon_check_button_new(HILDON_SIZE_AUTO);
+  gtk_button_set_label (GTK_BUTTON (diverts[i].button), label);
+  gtk_container_add (GTK_CONTAINER(diverts[i].hbox), diverts[i].button);
+
+  diverts[i].entry = hildon_entry_new(HILDON_SIZE_AUTO);
+  hildon_entry_set_placeholder (HILDON_ENTRY (diverts[i].entry),
+				_("Number"));
+  gtk_container_add (GTK_CONTAINER(diverts[i].hbox), diverts[i].entry);
+
+  diverts[i].label = label;
+  diverts[i].number = NULL;
+  diverts[i].divert_type = divert_type;
+
+  return i;
 }
 
 int main (int argc, char *argv[])
 {
   DBusError dbus_error;
+
+  setlocale (LC_ALL, "");
+  bindtextdomain (PACKAGE, PACKAGE_LOCALE_DIR);
+  bind_textdomain_codeset (PACKAGE, "UTF-8");
+  textdomain (PACKAGE);
 
   hildon_gtk_init(&argc, &argv);
 
@@ -233,8 +300,11 @@ int main (int argc, char *argv[])
   hildon_pannable_area_add_with_viewport (
 					  HILDON_PANNABLE_AREA (pannable_area), GTK_WIDGET (main_box));
 
-  ss_get_divert(SS_DIVERT_ALL, got_divert, "Unconditional divert");
-  //  ss_get_divert(SS_DIVERT_BUSY, got_divert, "Divert on busy");
+  add_divert_row(GTK_WIDGET(main_window), GTK_CONTAINER(main_box), _("Unconditional"), SS_DIVERT_ALL);
+  add_divert_row(GTK_WIDGET(main_window), GTK_CONTAINER(main_box), _("Busy"), SS_DIVERT_BUSY);
+  add_divert_row(GTK_WIDGET(main_window), GTK_CONTAINER(main_box), _("No reply"), SS_DIVERT_NO_REPLY);
+  add_divert_row(GTK_WIDGET(main_window), GTK_CONTAINER(main_box), _("Not reachable"), SS_DIVERT_NO_REACH);
+  ss_get_divert(SS_DIVERT_ALL, got_divert, (void *)0);
 
   gtk_widget_show_all(GTK_WIDGET(main_window));
   gtk_main();
