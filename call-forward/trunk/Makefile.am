@@ -16,7 +16,16 @@ desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 @INTLTOOL_DESKTOP_RULE@
 service_DATA = $(service_in_files:.service.in=.service)
 
+iconsdir = $(datadir)/icons/hicolor
+
+nobase_icons_DATA = scalable/hildon/call-forward.png
+
+scalable/hildon/gpe-calendar.png: gpe-calendar-64x64.png
+	-mkdir -p scalable/hildon
+	cp $< $@
+
 EXTRA_DIST = $(service_DATA) \
+		$(nobase_icons_DATA) \
              net.uk.cobb.call-forward.service.in \
              call-forward.desktop.in.in \
              intltool-extract.in \
