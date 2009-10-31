@@ -31,7 +31,7 @@
 #include <locale.h>
 #include <string.h>
 
-#define PACKAGE_DBUS_NAME "net.uk.cobb.call-forward"
+#define PACKAGE_DBUS_NAME "net.uk.cobb.call_forward"
 
 DBusConnection *dbus_system, *dbus_session;
 osso_context_t* osso_ctx;
