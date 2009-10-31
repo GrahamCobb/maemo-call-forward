@@ -61,5 +61,5 @@ AC_OUTPUT([
 po/Makefile.in
 po/Makefile
 call-forward.desktop.in
-net.uk.cobb.call-forward.service
+net.uk.cobb.call_forward.service
 ])
