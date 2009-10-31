@@ -17,7 +17,7 @@ configure-stamp:
 	# Add here commands to configure the package.
 	intltoolize --copy --automake --force
 	autoreconf -f -i -s
-	CFLAGS="$(CFLAGS)" ./configure
+	CFLAGS="$(CFLAGS)" ./configure --prefix=/usr
 
 	touch configure-stamp
 
