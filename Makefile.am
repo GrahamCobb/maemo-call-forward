@@ -10,7 +10,7 @@ desktopdir = $(datadir)/applications/hildon
 desktop_in_files = call-forward.desktop.in
 
 servicedir = $(datadir)/dbus-1/services
-service_in_files = net.uk.cobb.call-forward.service
+service_in_files = net.uk.cobb.call_forward.service
 
 desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 @INTLTOOL_DESKTOP_RULE@
@@ -22,7 +22,7 @@ icons_DATA = call-forward.png
 
 EXTRA_DIST = $(service_DATA) \
 		$(icons_DATA) \
-             net.uk.cobb.call-forward.service.in \
+             net.uk.cobb.call_forward.service.in \
              call-forward.desktop.in.in \
              intltool-extract.in \
              intltool-merge.in \
